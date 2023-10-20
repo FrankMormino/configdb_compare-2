@@ -28,7 +28,7 @@ class MySQLCompare:
     logger.setLevel(logging.INFO)
 
     logFormat = "[%(levelname)s] %(asctime)s -- %(message)s"
-    logging.basicConfig(format=logFormat, level=logging.INFO, datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.basicConfig(format=logFormat, level=logging.DEBUG, datefmt='%m/%d/%Y %I:%M:%S %p')
 
     logger.info("Working Directory: {}".format(WORK_DIR))
     logger.info("PROJECT ROOT DIRECTORY: {}".format(PROJECT_ROOT))
