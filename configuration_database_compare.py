@@ -212,12 +212,14 @@ class MySQLCompare:
         filtered_data = {}
         for row in data:
             valid_date = row[5]
+            self.logger.debug(f'Processing row: {row}')  # Add this line here
             if valid_date.strftime('%Y') != '9999':
                 continue
             config_name = row[2]
             config_value = row[3]
             if not substring_condition or (substring_condition and substring_condition in config_name):
                 filtered_data[config_name] = config_value
+        self.logger.debug(f'Filtered data so far: {filtered_data}')  # And this line here
         return filtered_data
 
     def check_for_duplicates(self, data):
@@ -238,6 +240,7 @@ class MySQLCompare:
     def analyze_database_config(self, substring_condition):
         self.logger.info("Fetching data from database...")
         data = self.fetch_data_from_db(self.SELECT_QUERY.format(table=self.CONFIG_TABLE_NAME))
+        #self.logger.debug(f'Fetched data: {data}')  # Add this line here
         self.logger.info("Filtering data...")
         filtered_data = self.filter_data(data, substring_condition)
         """
@@ -246,6 +249,7 @@ class MySQLCompare:
         :return: Dictionary of flagged keys.
         """
         flagged_keys, total_warnings = self.check_for_duplicates(filtered_data)
+        self.logger.debug(f'Flagged keys: {flagged_keys}, Total warnings: {total_warnings}')  # And this line here
         self.logger.info(f"Returning {len(flagged_keys)} keys from database table...")
         self.TOTAL_WARNINGS += total_warnings
         return flagged_keys
@@ -256,8 +260,10 @@ class MySQLCompare:
             operating_system=self.OPERATING_SYSTEM,
             path="{root}/{relative}".format(root=self.PROJECT_ROOT, relative=scripts_dir)
         )
+        self.logger.debug(f'Files directory: {files_directory}')  # Add this line
         for path in Path(files_directory).rglob('*.sql'):
             path_str = str(path)
+            self.logger.debug(f'Processing path: {path_str}')  # Add this line
             if os.path.normpath(self.CLIENT_SPECIFIC_DIRECTORY) in path_str:
                 if self.client_specific_keyword and self.client_specific_keyword in path_str:
                     all_sql_config_insert_scripts.append(path)
@@ -270,9 +276,11 @@ class MySQLCompare:
         with open(filename, 'r') as f:
             lines = f.readlines()
             for line in lines:
+                self.logger.debug(f'Processing line: {line}')  # Add this line
                 if not line.startswith('CALL') or 'CAST' in line:
                     continue
                 config_name, config_value = self.parse_stored_proc_statement(statement=line)
+                self.logger.debug(f'Parsed values: {config_name}, {config_value}')  # Add this line
                 if config_name in flagged_keys:
                     self.logger.info('WARN: {key} is duplicated with value {value} in INSERT SCRIPTS'.format(
                         key=config_name,
@@ -286,8 +294,10 @@ class MySQLCompare:
         self.validate_input_string(scripts_dir, "scripts_dir")
         self.validate_input_string(substring_condition, "substring_condition")
         all_sql_config_insert_scripts = self.get_all_script_files(scripts_dir)
+        self.logger.debug(f'Total script files: {len(all_sql_config_insert_scripts)}')  # Add this line
         flagged_keys = {}
         for filename in all_sql_config_insert_scripts:
+            self.logger.debug(f'Processing filename: {filename}')  # Add this line
             flagged_keys.update(self.analyze_script_file(filename, substring_condition))
         return flagged_keys, len(flagged_keys)
 
