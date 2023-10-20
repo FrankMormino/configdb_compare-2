@@ -192,6 +192,17 @@ class MySQLCompare:
                 filtered_data[config_name] = config_value
         return filtered_data
 
+    def check_for_duplicates(self, data):
+        total_warnings = 0
+        flagged_keys = dict()
+        for config_name, config_value in data.items():
+            if config_name in flagged_keys:
+                total_warnings += 1
+                self.logger.warning(
+                    f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
+            flagged_keys[config_name] = config_value
+        return flagged_keys, total_warnings
+
     def analyze_database_config(self, substring_condition):
         self.logger.info("Fetching data from database...")
         data = self.fetch_data_from_db(self.SELECT_QUERY.format(table=self.CONFIG_TABLE_NAME))
@@ -202,23 +213,7 @@ class MySQLCompare:
         :param substring_condition: Substring to filter keys.
         :return: Dictionary of flagged keys.
         """
-        flagged_keys = dict()
-        total_warnings = 0
-
-        try:
-            # Log the action
-            if substring_condition:
-                self.logger.info(
-                    f"Getting all active configuration keys from database containing substring '{substring_condition}' ...")
-            else:
-                self.logger.info("Getting all active configuration keys from database...")
-
-            # Execute the SQL query
-            # cursor = self.cursor.execute_sql(f"SELECT * FROM {self.CONFIG_TABLE_NAME}")
-            cursor = self.cursor.execute_sql(self.SELECT_QUERY.format(table=self.CONFIG_TABLE_NAME))
-        except Exception as e:
-            self.logger.error(f"Failed to execute SQL query: {e}")
-            return flagged_keys  # Return empty dict in case of error
+        flagged_keys, total_warnings = self.check_for_duplicates(filtered_data)
 
         try:
             # Process the results
