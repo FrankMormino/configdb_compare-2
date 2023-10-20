@@ -26,7 +26,7 @@ class MySQLCompare:
 
     # -- Logging
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     logFormat = "[%(levelname)s] %(asctime)s -- %(message)s"
     logging.basicConfig(format=logFormat, level=logging.DEBUG, datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -246,22 +246,6 @@ class MySQLCompare:
         :return: Dictionary of flagged keys.
         """
         flagged_keys, total_warnings = self.check_for_duplicates(filtered_data)
-
-        try:
-            # Process the results
-            for config_name, config_value in filtered_data.items():
-                if config_name in flagged_keys:
-                    total_warnings += 1
-                    self.logger.warning(
-                        f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-
-                # If no substring was provided, take all keys. Else, only take keys that contain substring
-                if not substring_condition or (substring_condition and substring_condition in config_name):
-                    flagged_keys[config_name] = config_value
-        except Exception as e:
-            self.logger.error(f"Error processing SQL results: {e}")
-            return flagged_keys  # Return whatever keys have been processed so far in case of error
-
         self.logger.info(f"Returning {len(flagged_keys)} keys from database table...")
         self.TOTAL_WARNINGS += total_warnings
         return flagged_keys
