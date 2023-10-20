@@ -180,10 +180,6 @@ class MySQLCompare:
             # Linux
             return path
 
-    def fetch_data_from_db(self, query):
-        cursor = self.cursor.execute_sql(query)
-        return cursor.fetchall()
-
     def filter_data(self, data, substring_condition):
         filtered_data = {}
         for row in data:
@@ -197,9 +193,9 @@ class MySQLCompare:
         return filtered_data
 
     def analyze_database_config(self, substring_condition):
-        self.log_info("Fetching data from database...")
+        self.logger.info("Fetching data from database...")
         data = self.fetch_data_from_db(self.SELECT_QUERY.format(table=self.CONFIG_TABLE_NAME))
-        self.log_info("Filtering data...")
+        self.logger.info("Filtering data...")
         filtered_data = self.filter_data(data, substring_condition)
         """
         Analyze the database configuration table to retrieve configuration table rows.
@@ -226,15 +222,7 @@ class MySQLCompare:
 
         try:
             # Process the results
-            for row in cursor.fetchall():
-                # Ignore invalidated config values
-                valid_date = row[5]
-                if valid_date.strftime('%Y') != '9999':
-                    continue
-
-                # Add the first occurrence of each valid config value
-                config_name = row[2]
-                config_value = row[3]
+            for config_name, config_value in filtered_data.items():
                 if config_name in flagged_keys:
                     total_warnings += 1
                     self.logger.warning(
@@ -397,7 +385,7 @@ class MySQLCompare:
 
 
 def main(args):
-    mysql = None  # Declare mysql here so it's accessible in the finally block
+    mysql = None  # Declare mysql here, so it's accessible in the finally block
     try:
         logging.info("Arguments: " + str(args))
 
