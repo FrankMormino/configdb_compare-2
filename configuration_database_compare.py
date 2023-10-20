@@ -193,134 +193,17 @@ class MySQLCompare:
         return filtered_data
 
     def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
-
-    def check_for_duplicates(self, data):
-    total_warnings = 0
-    flagged_keys = dict()
-    for config_name, config_value in data.items():
-        if config_name in flagged_keys:
-            total_warnings += 1
-            self.logger.warning(
-                f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
-            # Additional logging
-            self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
-        flagged_keys[config_name] = config_value
-    return flagged_keys, total_warnings
+        total_warnings = 0
+        flagged_keys = dict()
+        for config_name, config_value in data.items():
+            if config_name in flagged_keys:
+                total_warnings += 1
+                self.logger.warning(
+                    f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
+                # Additional logging
+                self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
+            flagged_keys[config_name] = config_value
+        return flagged_keys, total_warnings
 
 
     def analyze_database_config(self, substring_condition):
