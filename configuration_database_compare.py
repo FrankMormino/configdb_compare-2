@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import argparse
 import logging
@@ -138,6 +139,33 @@ class MySQLCompare:
         config_value = line.split(",")[1].strip()
         return config_name, config_value
 
+#    @staticmethod
+#    def parse_stored_proc_statement(statement):
+#        pattern = re.compile(r"CALL SP_CREATE_CONFIG_FIELD\(\s*'([^']+)',\s*'([^']+)',\s*null\s*\);")
+#        match = pattern.search(statement)
+#        if match:
+#            config_name, config_value = match.groups()
+#            return config_name, config_value
+#        else:
+#            raise ValueError("Statement does not match expected format")
+#
+#    @staticmethod
+#    def parse_stored_proc_statement(statement):
+#        """
+#        Parse a stored procedure call statement from .sql script
+#        :param statement:
+#        :return:
+#        """
+#        try:
+#            matches = re.match(r'.*\((.*?),\s*(.*?)\)', statement)
+#            if matches:
+#                config_name = matches.group(1).replace('"', '').replace("'", '').strip()
+#                config_value = matches.group(2).replace('"', '').replace("'", '').strip()
+#                return config_name, config_value
+#        except Exception as e:
+#            raise ValueError(f"Failed to parse statement {statement}: {e}")
+#
+
     def connect(self):
         """
         Connect to a MySQL database.
@@ -193,6 +221,7 @@ class MySQLCompare:
         return filtered_data
 
     def check_for_duplicates(self, data):
+        self.logger.debug("Entering check_for_duplicates method")
         total_warnings = 0
         flagged_keys = dict()
         for config_name, config_value in data.items():
@@ -237,66 +266,51 @@ class MySQLCompare:
         self.TOTAL_WARNINGS += total_warnings
         return flagged_keys
 
-    def analyze_scripts_config(self, scripts_dir, substring_condition):
-        """
-        Analyze the configuration table insert .sql scripts to retrieve and parse configuration procedure statements
-        :param scripts_dir:
-        :param substring_condition:
-        :return:
-        """
-        flagged_keys = dict()
-        total_warnings = 0
+    def get_all_script_files(self, scripts_dir):
         all_sql_config_insert_scripts = []
         files_directory = self.format_windows_path(
             operating_system=self.OPERATING_SYSTEM,
             path="{root}/{relative}".format(root=self.PROJECT_ROOT, relative=scripts_dir)
         )
-        self.logger.info("Globbing files from '{}' ...".format(files_directory))
         for path in Path(files_directory).rglob('*.sql'):
             path_str = str(path)
             if os.path.normpath(self.CLIENT_SPECIFIC_DIRECTORY) in path_str:
-                self.logger.info("CLIENT-SPECIFIC FILE FOUND: {}".format(path_str))
                 if self.client_specific_keyword and self.client_specific_keyword in path_str:
-                    self.logger.info(" -- FILE IS SPECIFIC TO CLIENT! Adding... ")
                     all_sql_config_insert_scripts.append(path)
-                elif not self.client_specific_keyword:
-                    self.logger.warning("-- CLIENT SPECIFIC KEYWORD NOT PROVIDED! Skipping file...")
-                else:
-                    self.logger.info(" -- FILE IS NOT FOR THIS CLIENT! Will NOT add... ")
             else:
-                self.logger.info("FILE FOUND: {}".format(path))
                 all_sql_config_insert_scripts.append(path)
-        self.logger.info("Total files found: {}".format(len(all_sql_config_insert_scripts)))
-        self.logging_line_break()
-        self.logger.info("Starting file analysis...")
+        return all_sql_config_insert_scripts
+
+    def analyze_script_file(self, filename, substring_condition):
+        flagged_keys = {}
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if not line.startswith('CALL') or 'CAST' in line:
+                    continue
+                config_name, config_value = self.parse_stored_proc_statement(statement=line)
+                if config_name in flagged_keys:
+                    self.logger.info('WARN: {key} is duplicated with value {value} in INSERT SCRIPTS'.format(
+                        key=config_name,
+                        value=config_value
+                    ))
+                if not substring_condition or (substring_condition and substring_condition in config_name):
+                    flagged_keys[config_name] = config_value
+        return flagged_keys
+
+    def analyze_scripts_config(self, scripts_dir, substring_condition):
+        self.validate_input_string(scripts_dir, "scripts_dir")
+        self.validate_input_string(substring_condition, "substring_condition")
+        all_sql_config_insert_scripts = self.get_all_script_files(scripts_dir)
+        flagged_keys = {}
         for filename in all_sql_config_insert_scripts:
-            self.logger.info(" -- Reading File {}".format(filename))
-            with open(filename, 'r') as f:
-                flagged = 0
-                lines = f.readlines()
-                self.logger.info(" -- -- Parsing File {}".format(filename))
-                for line in lines:
-                    if not line.startswith('CALL') or 'CAST' in line:
-                        # Not a stored procedure
-                        continue
-                    else:
-                        config_name, config_value = self.parse_stored_proc_statement(statement=line)
-                    if config_name in flagged_keys:
-                        # Found duplicated config key
-                        total_warnings += 1
-                        self.logger.info('WARN: {key} is duplicated with value {value} in INSERT SCRIPTS'.format(
-                            key=config_name,
-                            value=config_value
-                        ))
-                    # If no substring was provided, take all keys. Else, only take keys that contain substring
-                    if not substring_condition or (substring_condition and substring_condition in config_name):
-                        flagged_keys[config_name] = config_value
-                        flagged += 1
-                self.logger.info("-- -- -- Flagged Keys: {}".format(flagged))
-                self.logging_line_break()
-        self.logger.info(
-            "Returning {} keys from {} files...".format(len(flagged_keys), len(all_sql_config_insert_scripts)))
-        return flagged_keys, total_warnings
+            flagged_keys.update(self.analyze_script_file(filename, substring_condition))
+        return flagged_keys, len(flagged_keys)
+
+# i could probably remove this
+#    def compare_database_to_scripts(self, database_keys, script_keys):
+#        self.validate_input_dict(database_keys, "database_keys")
+#        self.validate_input_dict(script_keys, "script_keys")
 
     def compare_database_to_scripts(self, database_keys, script_keys):
         """
@@ -305,6 +319,8 @@ class MySQLCompare:
         :param script_keys: Dictionary of keys from the scripts.
         :return: List of differences.
         """
+        self.validate_input_dict(database_keys, "database_keys")
+        self.validate_input_dict(script_keys, "script_keys")
         differences = []
 
         # Ensure the input arguments are dictionaries
@@ -352,6 +368,16 @@ class MySQLCompare:
                 self.logger.error(f"Error printing table: {e}")
 
         return differences
+
+    def validate_input_string(self, input_value, param_name):
+        if not isinstance(input_value, str):
+            self.logger.error(f"Invalid {param_name}: {input_value}. It should be a string.")
+            raise ValueError(f"Invalid {param_name}")
+
+    def validate_input_dict(self, input_value, param_name):
+        if not isinstance(input_value, dict):
+            self.logger.error(f"Invalid {param_name}: {input_value}. It should be a dictionary.")
+            raise ValueError(f"Invalid {param_name}")
 
     def notify_warnings(self, additional_warnings):
         try:
