@@ -29,24 +29,26 @@ class MySQLCompare:
     logger.setLevel(logging.DEBUG)
 
     logFormat = "[%(levelname)s] %(asctime)s -- %(message)s"
-    logging.basicConfig(format=logFormat, level=logging.DEBUG, datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.basicConfig(
+        format=logFormat, level=logging.DEBUG, datefmt="%m/%d/%Y %I:%M:%S %p"
+    )
 
     logger.info("Working Directory: {}".format(WORK_DIR))
     logger.info("PROJECT ROOT DIRECTORY: {}".format(PROJECT_ROOT))
     logger.info("OS: {}".format(OPERATING_SYSTEM))
 
     def __init__(
-            self,
-            host,
-            port,
-            database,
-            user,
-            password,
-            max_table_width,
-            is_print_table_diff,
-            is_print_stored_procs,
-            client_specific_keyword,
-            comparison_direction
+        self,
+        host,
+        port,
+        database,
+        user,
+        password,
+        max_table_width,
+        is_print_table_diff,
+        is_print_stored_procs,
+        client_specific_keyword,
+        comparison_direction,
     ):
         self.host = host
         self.port = port
@@ -95,21 +97,31 @@ class MySQLCompare:
                 config_value_database = entry[2]
                 config_value_script = entry[3]
                 if self.comparison_direction == "scripts":
-                    statement = "CALL SP_CREATE_CONFIG_FIELD('{k}', '{v}', null);".format(
-                        k=config_name, v=config_value_script
+                    statement = (
+                        "CALL SP_CREATE_CONFIG_FIELD('{k}', '{v}', null);".format(
+                            k=config_name, v=config_value_script
+                        )
                     )
                 elif self.comparison_direction == "server":
-                    statement = "CALL SP_CREATE_CONFIG_FIELD('{k}', '{v}', null);".format(
-                        k=config_name, v=config_value_database
+                    statement = (
+                        "CALL SP_CREATE_CONFIG_FIELD('{k}', '{v}', null);".format(
+                            k=config_name, v=config_value_database
+                        )
                     )
                 else:
-                    self.logger.error("UNKNOWN COMPARISON DIRECTION: {}".format(self.comparison_direction))
+                    self.logger.error(
+                        "UNKNOWN COMPARISON DIRECTION: {}".format(
+                            self.comparison_direction
+                        )
+                    )
                 if difference_type == "MISSING":
                     all_missing_key_stored_proc_statements.append(statement)
                 elif difference_type == "CHANGE":
                     all_diff_key_stored_proc_statements.append(statement)
                 else:
-                    self.logger.error("UNKNOWN COMPARISON TYPE: {}".format(difference_type))
+                    self.logger.error(
+                        "UNKNOWN COMPARISON TYPE: {}".format(difference_type)
+                    )
             if self.comparison_direction == "scripts":
                 print("STORED PROCEDURES FOR MISSING KEYS:")
                 for stored_proc in all_missing_key_stored_proc_statements:
@@ -117,7 +129,8 @@ class MySQLCompare:
             elif self.comparison_direction == "server":
                 print(
                     "STORED PROCEDURES FOR MISSING KEYS: Since we're trying to CHANGE THE SCRIPTS to MATCH THE SERVER,"
-                    "this DOES NOT APPLY! Skipping...")
+                    "this DOES NOT APPLY! Skipping..."
+                )
             print("----------" * 5)
             print("\n" * 5)
             print("STORED PROCEDURES FOR KEYS WITH DIFFERENT VALUES:")
@@ -132,39 +145,14 @@ class MySQLCompare:
         :param statement:
         :return:
         """
-        line = statement.split('(', 1)[1]
-        line = line.replace('"', '')
-        line = line.replace("'", '')
+        line = statement.split("(", 1)[1]
+        line = line.replace('"', "")
+        line = line.replace("'", "")
         config_name = line.split(",")[0].strip()
         config_value = line.split(",")[1].strip()
         return config_name, config_value
 
-#    @staticmethod
-#    def parse_stored_proc_statement(statement):
-#        pattern = re.compile(r"CALL SP_CREATE_CONFIG_FIELD\(\s*'([^']+)',\s*'([^']+)',\s*null\s*\);")
-#        match = pattern.search(statement)
-#        if match:
-#            config_name, config_value = match.groups()
-#            return config_name, config_value
-#        else:
-#            raise ValueError("Statement does not match expected format")
-#
-#    @staticmethod
-#    def parse_stored_proc_statement(statement):
-#        """
-#        Parse a stored procedure call statement from .sql script
-#        :param statement:
-#        :return:
-#        """
-#        try:
-#            matches = re.match(r'.*\((.*?),\s*(.*?)\)', statement)
-#            if matches:
-#                config_name = matches.group(1).replace('"', '').replace("'", '').strip()
-#                config_value = matches.group(2).replace('"', '').replace("'", '').strip()
-#                return config_name, config_value
-#        except Exception as e:
-#            raise ValueError(f"Failed to parse statement {statement}: {e}")
-#
+    #
 
     def connect(self):
         """
@@ -178,14 +166,16 @@ class MySQLCompare:
             host=self.host,
             port=self.port,
             user=self.user,
-            passwd=self.password
+            passwd=self.password,
         )
-        self.logger.info(f"Attempting to connect to MySQL database at {self.host}:{self.port}...")
+        self.logger.info(
+            f"Attempting to connect to MySQL database at {self.host}:{self.port}..."
+        )
         try:
             connection.connect()
             self.logger.info("MySQL Connection Status: Connected")
         except peewee.OperationalError as e:
-            self.logger.error(f'MySQL Connection Status: Not Connected. {e}')
+            self.logger.error(f"MySQL Connection Status: Not Connected. {e}")
             sys.exit(1)
         return connection
 
@@ -212,14 +202,18 @@ class MySQLCompare:
         filtered_data = {}
         for row in data:
             valid_date = row[5]
-            self.logger.debug(f'Processing row: {row}')  # Add this line here
-            if valid_date.strftime('%Y') != '9999':
+            self.logger.debug(f"Processing row: {row}")  # Add this line here
+            if valid_date.strftime("%Y") != "9999":
                 continue
             config_name = row[2]
             config_value = row[3]
-            if not substring_condition or (substring_condition and substring_condition in config_name):
+            if not substring_condition or (
+                substring_condition and substring_condition in config_name
+            ):
                 filtered_data[config_name] = config_value
-        self.logger.debug(f'Filtered data so far: {filtered_data}')  # And this line here
+        self.logger.debug(
+            f"Filtered data so far: {filtered_data}"
+        )  # And this line here
         return filtered_data
 
     def check_for_duplicates(self, data):
@@ -230,17 +224,19 @@ class MySQLCompare:
             if config_name in flagged_keys:
                 total_warnings += 1
                 self.logger.warning(
-                    f"'{config_name}' is duplicated with value '{config_value}' in Configuration table")
+                    f"'{config_name}' is duplicated with value '{config_value}' in Configuration table"
+                )
                 # Additional logging
                 self.logger.debug(f"Duplicate found: {config_name} = {config_value}")
             flagged_keys[config_name] = config_value
         return flagged_keys, total_warnings
 
-
     def analyze_database_config(self, substring_condition):
         self.logger.info("Fetching data from database...")
-        data = self.fetch_data_from_db(self.SELECT_QUERY.format(table=self.CONFIG_TABLE_NAME))
-        #self.logger.debug(f'Fetched data: {data}')  # Add this line here
+        data = self.fetch_data_from_db(
+            self.SELECT_QUERY.format(table=self.CONFIG_TABLE_NAME)
+        )
+        # self.logger.debug(f'Fetched data: {data}')  # Add this line here
         self.logger.info("Filtering data...")
         filtered_data = self.filter_data(data, substring_condition)
         """
@@ -249,7 +245,9 @@ class MySQLCompare:
         :return: Dictionary of flagged keys.
         """
         flagged_keys, total_warnings = self.check_for_duplicates(filtered_data)
-        self.logger.debug(f'Flagged keys: {flagged_keys}, Total warnings: {total_warnings}')  # And this line here
+        self.logger.debug(
+            f"Flagged keys: {flagged_keys}, Total warnings: {total_warnings}"
+        )  # And this line here
         self.logger.info(f"Returning {len(flagged_keys)} keys from database table...")
         self.TOTAL_WARNINGS += total_warnings
         return flagged_keys
@@ -258,14 +256,19 @@ class MySQLCompare:
         all_sql_config_insert_scripts = []
         files_directory = self.format_windows_path(
             operating_system=self.OPERATING_SYSTEM,
-            path="{root}/{relative}".format(root=self.PROJECT_ROOT, relative=scripts_dir)
+            path="{root}/{relative}".format(
+                root=self.PROJECT_ROOT, relative=scripts_dir
+            ),
         )
-        self.logger.debug(f'Files directory: {files_directory}')  # Add this line
-        for path in Path(files_directory).rglob('*.sql'):
+        self.logger.debug(f"Files directory: {files_directory}")  # Add this line
+        for path in Path(files_directory).rglob("*.sql"):
             path_str = str(path)
-            self.logger.debug(f'Processing path: {path_str}')  # Add this line
+            self.logger.debug(f"Processing path: {path_str}")  # Add this line
             if os.path.normpath(self.CLIENT_SPECIFIC_DIRECTORY) in path_str:
-                if self.client_specific_keyword and self.client_specific_keyword in path_str:
+                if (
+                    self.client_specific_keyword
+                    and self.client_specific_keyword in path_str
+                ):
                     all_sql_config_insert_scripts.append(path)
             else:
                 all_sql_config_insert_scripts.append(path)
@@ -273,20 +276,27 @@ class MySQLCompare:
 
     def analyze_script_file(self, filename, substring_condition):
         flagged_keys = {}
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             lines = f.readlines()
             for line in lines:
-                self.logger.debug(f'Processing line: {line}')  # Add this line
-                if not line.startswith('CALL') or 'CAST' in line:
+                self.logger.debug(f"Processing line: {line}")  # Add this line
+                if not line.startswith("CALL") or "CAST" in line:
                     continue
-                config_name, config_value = self.parse_stored_proc_statement(statement=line)
-                self.logger.debug(f'Parsed values: {config_name}, {config_value}')  # Add this line
+                config_name, config_value = self.parse_stored_proc_statement(
+                    statement=line
+                )
+                self.logger.debug(
+                    f"Parsed values: {config_name}, {config_value}"
+                )  # Add this line
                 if config_name in flagged_keys:
-                    self.logger.info('WARN: {key} is duplicated with value {value} in INSERT SCRIPTS'.format(
-                        key=config_name,
-                        value=config_value
-                    ))
-                if not substring_condition or (substring_condition and substring_condition in config_name):
+                    self.logger.info(
+                        "WARN: {key} is duplicated with value {value} in INSERT SCRIPTS".format(
+                            key=config_name, value=config_value
+                        )
+                    )
+                if not substring_condition or (
+                    substring_condition and substring_condition in config_name
+                ):
                     flagged_keys[config_name] = config_value
         return flagged_keys
 
@@ -294,17 +304,19 @@ class MySQLCompare:
         self.validate_input_string(scripts_dir, "scripts_dir")
         self.validate_input_string(substring_condition, "substring_condition")
         all_sql_config_insert_scripts = self.get_all_script_files(scripts_dir)
-        self.logger.debug(f'Total script files: {len(all_sql_config_insert_scripts)}')  # Add this line
+        self.logger.debug(
+            f"Total script files: {len(all_sql_config_insert_scripts)}"
+        )  # Add this line
         flagged_keys = {}
         for filename in all_sql_config_insert_scripts:
-            self.logger.debug(f'Processing filename: {filename}')  # Add this line
+            self.logger.debug(f"Processing filename: {filename}")  # Add this line
             flagged_keys.update(self.analyze_script_file(filename, substring_condition))
         return flagged_keys, len(flagged_keys)
 
-# i could probably remove this
-#    def compare_database_to_scripts(self, database_keys, script_keys):
-#        self.validate_input_dict(database_keys, "database_keys")
-#        self.validate_input_dict(script_keys, "script_keys")
+    # i could probably remove this
+    #    def compare_database_to_scripts(self, database_keys, script_keys):
+    #        self.validate_input_dict(database_keys, "database_keys")
+    #        self.validate_input_dict(script_keys, "script_keys")
 
     def compare_database_to_scripts(self, database_keys, script_keys):
         """
@@ -326,10 +338,10 @@ class MySQLCompare:
             table = beautifultable.BeautifulTable()
             table.maxwidth = self.max_table_width
             table.header = [
-                'DIFFERENCE TYPE',
-                'CONFIG NAME',
-                f'CONFIG VALUE ({self.database}@{self.host}:{self.port})',
-                'CONFIG VALUE (.sql Scripts)'
+                "DIFFERENCE TYPE",
+                "CONFIG NAME",
+                f"CONFIG VALUE ({self.database}@{self.host}:{self.port})",
+                "CONFIG VALUE (.sql Scripts)",
             ]
         except Exception as e:
             self.logger.error(f"Failed to create table: {e}")
@@ -341,12 +353,17 @@ class MySQLCompare:
                     if script_keys[config_name] != database_keys[config_name]:
                         config_value_database = database_keys[config_name]
                         config_value_script = script_keys[config_name]
-                        entry = ['CHANGE', config_name, config_value_database, config_value_script]
+                        entry = [
+                            "CHANGE",
+                            config_name,
+                            config_value_database,
+                            config_value_script,
+                        ]
                         differences.append(entry)
                         table.rows.append(entry)
                 else:
                     config_value_script = script_keys[config_name]
-                    entry = ['MISSING', config_name, 'N/A', config_value_script]
+                    entry = ["MISSING", config_name, "N/A", config_value_script]
                     differences.append(entry)
                     table.rows.append(entry)
         except Exception as e:
@@ -365,12 +382,16 @@ class MySQLCompare:
 
     def validate_input_string(self, input_value, param_name):
         if not isinstance(input_value, str):
-            self.logger.error(f"Invalid {param_name}: {input_value}. It should be a string.")
+            self.logger.error(
+                f"Invalid {param_name}: {input_value}. It should be a string."
+            )
             raise ValueError(f"Invalid {param_name}")
 
     def validate_input_dict(self, input_value, param_name):
         if not isinstance(input_value, dict):
-            self.logger.error(f"Invalid {param_name}: {input_value}. It should be a dictionary.")
+            self.logger.error(
+                f"Invalid {param_name}: {input_value}. It should be a dictionary."
+            )
             raise ValueError(f"Invalid {param_name}")
 
     def notify_warnings(self, additional_warnings):
@@ -391,7 +412,7 @@ class MySQLCompare:
         if self.TOTAL_WARNINGS:
             try:
                 self.logger.warning(
-                    f'TOTAL WARNINGS FOUND: {self.TOTAL_WARNINGS}. Please review, as duplicates can cause unexpected results!'
+                    f"TOTAL WARNINGS FOUND: {self.TOTAL_WARNINGS}. Please review, as duplicates can cause unexpected results!"
                 )
             except Exception as e:
                 self.logger.error(f"Error logging warnings: {e}")
@@ -407,13 +428,21 @@ def main(args):
     try:
         logging.info("Arguments: " + str(args))
 
-        logging.warning("IMPORTANT: The 'Comparison Direction' (-cd) is set to '{}'".format(args.comparison_direction))
+        logging.warning(
+            "IMPORTANT: The 'Comparison Direction' (-cd) is set to '{}'".format(
+                args.comparison_direction
+            )
+        )
         if args.comparison_direction == "scripts":
-            logging.warning("This means that the main method will compare: THE MYSQL SERVER to THE SQL SCRIPTS! "
-                            "This will generate results to MATCH THE SERVER TO THE SCRIPTS")
+            logging.warning(
+                "This means that the main method will compare: THE MYSQL SERVER to THE SQL SCRIPTS! "
+                "This will generate results to MATCH THE SERVER TO THE SCRIPTS"
+            )
         elif args.comparison_direction == "server":
-            logging.warning("This means that the main method will compare: THE SQL SCRIPTS to THE MYSQL SERVER! "
-                            "This will generate results to REPRODUCE THE MYSQL SERVER!")
+            logging.warning(
+                "This means that the main method will compare: THE SQL SCRIPTS to THE MYSQL SERVER! "
+                "This will generate results to REPRODUCE THE MYSQL SERVER!"
+            )
         logging.warning("Sleeping for 10 seconds so you read this...")
         time.sleep(10)
     except Exception as e:
@@ -431,33 +460,43 @@ def main(args):
             is_print_table_diff=args.print_table,
             is_print_stored_procs=args.print_stored_procs,
             client_specific_keyword=args.client_keyword,
-            comparison_direction=args.comparison_direction
+            comparison_direction=args.comparison_direction,
         )
     except Exception as e:
         logging.error(f"Error initializing MySQLCompare: {e}")
         return  # Exit the method early in case of error
 
     try:
-        database_flagged_keys = mysql.analyze_database_config(substring_condition=args.contains)
+        database_flagged_keys = mysql.analyze_database_config(
+            substring_condition=args.contains
+        )
         mysql.logging_line_break()
-        alenza_scripts_flagged_keys, alenza_script_warnings = mysql.analyze_scripts_config(
+        (
+            alenza_scripts_flagged_keys,
+            alenza_script_warnings,
+        ) = mysql.analyze_scripts_config(
             scripts_dir=mysql.ALENZA_CONFIG_SCRIPTS_RELATIVE,
-            substring_condition=args.contains
+            substring_condition=args.contains,
         )
         mysql.logging_line_break()
-        aicon_scripts_flagged_keys, aicon_script_warnings = mysql.analyze_scripts_config(
+        (
+            aicon_scripts_flagged_keys,
+            aicon_script_warnings,
+        ) = mysql.analyze_scripts_config(
             scripts_dir=mysql.AICON_CONFIG_SCRIPTS_RELATIVE,
-            substring_condition=args.contains
+            substring_condition=args.contains,
         )
-        all_scripts_flagged_keys = {**alenza_scripts_flagged_keys, **aicon_scripts_flagged_keys}
+        all_scripts_flagged_keys = {
+            **alenza_scripts_flagged_keys,
+            **aicon_scripts_flagged_keys,
+        }
     except Exception as e:
         logging.error(f"Error analyzing configurations: {e}")
         return  # Exit the method early in case of error
 
     try:
         differences = mysql.compare_database_to_scripts(
-            database_keys=database_flagged_keys,
-            script_keys=all_scripts_flagged_keys
+            database_keys=database_flagged_keys, script_keys=all_scripts_flagged_keys
         )
         if differences:
             mysql.generate_missing_stored_proc_statement(differences)
@@ -467,7 +506,9 @@ def main(args):
         logging.error(f"Error comparing database to scripts: {e}")
 
     try:
-        mysql.notify_warnings(additional_warnings=alenza_script_warnings + aicon_script_warnings)
+        mysql.notify_warnings(
+            additional_warnings=alenza_script_warnings + aicon_script_warnings
+        )
     except Exception as e:
         logging.error(f"Error notifying warnings: {e}")
     finally:
@@ -475,46 +516,76 @@ def main(args):
             mysql.close_connection()  # Ensure the connection is closed
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # -- Parser
     parser = argparse.ArgumentParser(description="MySQL Comparison Script")
     # MySQL Connection
-    parser.add_argument("--host", type=str, required=True,
-                        help="Database hostname or IP")
-    parser.add_argument("--port", type=int, required=True,
-                        help="Database host port")
-    parser.add_argument("-d", "--database", type=str, required=True,
-                        help="Database name")
-    parser.add_argument("-u", "--user", type=str, required=True,
-                        help="Database user")
-    parser.add_argument("-p", "--passwd", type=str, required=True,
-                        help="Database password")
+    parser.add_argument(
+        "--host", type=str, required=True, help="Database hostname or IP"
+    )
+    parser.add_argument("--port", type=int, required=True, help="Database host port")
+    parser.add_argument(
+        "-d", "--database", type=str, required=True, help="Database name"
+    )
+    parser.add_argument("-u", "--user", type=str, required=True, help="Database user")
+    parser.add_argument(
+        "-p", "--passwd", type=str, required=True, help="Database password"
+    )
 
     # Comparison Direction
-    parser.add_argument("-cd", "--comparison_direction", type=str.lower,
-                        help="Comparison Direction. Either 'scripts' or 'server'. "
-                             "If 'scripts', show procedure for server to match scripts. "
-                             "If 'server', show procedure for scripts to match server.",
-                        choices=['scripts', 'server'],
-                        default="scripts")
+    parser.add_argument(
+        "-cd",
+        "--comparison_direction",
+        type=str.lower,
+        help="Comparison Direction. Either 'scripts' or 'server'. "
+        "If 'scripts', show procedure for server to match scripts. "
+        "If 'server', show procedure for scripts to match server.",
+        choices=["scripts", "server"],
+        default="scripts",
+    )
 
     # Filters
-    parser.add_argument("-c", "--contains", type=str, default='',
-                        help="Limit the results to containing the input substring")
+    parser.add_argument(
+        "-c",
+        "--contains",
+        type=str,
+        default="",
+        help="Limit the results to containing the input substring",
+    )
 
     # Client Specific
-    parser.add_argument("-x", "--client_keyword", type=str, default=None,
-                        help="If client-specific deploy, restrict .sql script search to ONLY client's files")
+    parser.add_argument(
+        "-x",
+        "--client_keyword",
+        type=str,
+        default=None,
+        help="If client-specific deploy, restrict .sql script search to ONLY client's files",
+    )
 
     # Stored Procedure Generation
-    parser.add_argument("-s", "--print_stored_procs", type=bool, default=False,
-                        help="Print Stored Procedures needed to convert to match .sql scripts and destination server")
+    parser.add_argument(
+        "-s",
+        "--print_stored_procs",
+        type=bool,
+        default=False,
+        help="Print Stored Procedures needed to convert to match .sql scripts and destination server",
+    )
 
     # Table
-    parser.add_argument("-t", "--print_table", type=bool, default=False,
-                        help="Print Table of Differences")
-    parser.add_argument("-m", "--max_table_width", type=int, default=300,
-                        help="The maximum table width of the results table.")
+    parser.add_argument(
+        "-t",
+        "--print_table",
+        type=bool,
+        default=False,
+        help="Print Table of Differences",
+    )
+    parser.add_argument(
+        "-m",
+        "--max_table_width",
+        type=int,
+        default=300,
+        help="The maximum table width of the results table.",
+    )
     try:
         main(parser.parse_args())
     except Exception as e:
